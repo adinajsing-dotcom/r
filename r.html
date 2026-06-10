@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Health</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+
+html,body{
+  width:100vw;height:100vh;
+  background:#000;
+  overflow:hidden;
+  font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;
+  touch-action:manipulation;
+}
+
+/* ── SCREENS ── */
+.scr{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  transition:opacity 0.16s,transform 0.16s;
+}
+.scr.off{opacity:0;pointer-events:none;transform:scale(0.96)}
+
+/* ══════════════════════════════
+   SCREEN 1 — WATCH FACE
+══════════════════════════════ */
+#s1{ background:#000; padding:0; }
+
+.watch-face{
+  width:220px;height:220px;
+  border-radius:50%;
+  background:radial-gradient(ellipse at 40% 35%,#1c1c1e 0%,#080808 100%);
+  border:1px solid #222;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  position:relative;
+  box-shadow:0 0 0 1px #111,inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+/* Fake activity rings */
+.ring-svg{position:absolute;inset:0;width:100%;height:100%}
+
+/* Fake time */
+.wf-time{
+  font-size:13px;font-weight:300;color:#4a4a4a;
+  letter-spacing:0.06em;margin-bottom:3px;
+}
+.wf-date{
+  font-size:9px;color:#2e2e2e;
+  letter-spacing:0.12em;text-transform:uppercase;
+  margin-bottom:10px;
+}
+
+/* BPM label */
+.wf-lbl{
+  font-size:9px;color:#3a3a3a;
+  letter-spacing:0.22em;text-transform:uppercase;
+  margin-bottom:1px;
+}
+
+/* THE BIG NUMBER — much bigger */
+.wf-bpm{
+  font-size:72px;font-weight:200;
+  color:#e8e8e8;
+  line-height:1;
+  letter-spacing:-3px;
+  font-variant-numeric:tabular-nums;
+}
+
+.wf-unit{
+  font-size:9px;color:#3a3a3a;
+  letter-spacing:0.18em;text-transform:uppercase;
+  margin-top:3px;
+}
+
+/* Tap zones — invisible, full left/right halves */
+.tap-l{
+  position:absolute;left:0;top:0;bottom:0;width:46%;
+  cursor:pointer;
+}
+.tap-r{
+  position:absolute;right:0;top:0;bottom:0;width:46%;
+  cursor:pointer;
+}
+
+/* ── BUTTONS BELOW WATCH FACE ── */
+.btn-row{
+  margin-top:10px;
+  display:flex;gap:20px;align-items:center;
+}
+
+/* LOG — nearly invisible, only you know it's there */
+.log-btn{
+  width:44px;height:22px;
+  border-radius:11px;
+  border:1px solid #0e0e0e; /* near-black border, same as bg */
+  background:#050505;       /* almost black */
+  color:#101010;            /* text same colour as bg — invisible text */
+  font-size:9px;letter-spacing:0.12em;text-transform:uppercase;
+  cursor:pointer;
+  /* no visible label to anyone else */
+}
+.log-btn:active{background:#111}
+
+/* RESET — equally invisible */
+.reset-btn{
+  width:44px;height:22px;
+  border-radius:11px;
+  border:1px solid #0e0e0e;
+  background:#050505;
+  color:#101010;
+  font-size:9px;letter-spacing:0.12em;text-transform:uppercase;
+  cursor:pointer;
+}
+.reset-btn:active{background:#111}
+
+/* Fake stats row */
+.wf-stats{
+  margin-top:8px;display:flex;gap:14px;
+}
+.wf-stat{text-align:center}
+.wf-stat-val{font-size:11px;font-weight:300;color:#2e2e2e}
+.wf-stat-lbl{font-size:8px;color:#222;letter-spacing:0.1em;text-transform:uppercase}
+
+/* ══════════════════════════════
+   SCREEN 2 — 19 NUMBERS
+   Centred, compact, clear
+   Tap anywhere → reset + back
+══════════════════════════════ */
+#s2{
+  background:#000;
+  padding:0;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+
+.s2-inner{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  padding:0 14px;
+}
+
+/* tiny camouflage BPM at top */
+.s2-cam{
+  display:flex;align-items:baseline;gap:4px;
+  margin-bottom:8px;
+}
+.s2-cam-num{
+  font-size:20px;font-weight:200;
+  color:#444;letter-spacing:-1px;
+  font-variant-numeric:tabular-nums;
+}
+.s2-cam-lbl{
+  font-size:8px;color:#252525;
+  letter-spacing:0.16em;text-transform:uppercase;
+}
+
+/* Thin line separator */
+.sep{width:50px;height:1px;background:#151515;margin-bottom:9px}
+
+/* 3 rows × 6 cols grid */
+.num-grid{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:5px 2px;
+  width:100%;
+}
+.nn{
+  height:30px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;font-weight:300;
+  color:#bbb;
+}
+.nn.ctr{
+  font-weight:500;color:#fff;
+  background:#1a1a1a;border-radius:4px;
+}
+/* last number — centre span */
+.nn.lone{grid-column:3/5}
+
+.sep2{width:50px;height:1px;background:#151515;margin-top:9px}
+</style>
+</head>
+<body>
+
+<!-- ── S1: WATCH FACE ── -->
+<div class="scr" id="s1">
+
+  <div class="watch-face">
+    <!-- Activity rings SVG -->
+    <svg class="ring-svg" viewBox="0 0 220 220">
+      <circle cx="110" cy="110" r="104" fill="none" stroke="#181818" stroke-width="3"/>
+      <circle cx="110" cy="110" r="104" fill="none" stroke="#321a1a" stroke-width="3"
+        stroke-dasharray="430 624" stroke-dashoffset="156" stroke-linecap="round"/>
+      <circle cx="110" cy="110" r="95" fill="none" stroke="#181818" stroke-width="3"/>
+      <circle cx="110" cy="110" r="95" fill="none" stroke="#1a2f1a" stroke-width="3"
+        stroke-dasharray="295 597" stroke-dashoffset="149" stroke-linecap="round"/>
+      <circle cx="110" cy="110" r="86" fill="none" stroke="#181818" stroke-width="3"/>
+      <circle cx="110" cy="110" r="86" fill="none" stroke="#1a2840" stroke-width="3"
+        stroke-dasharray="360 540" stroke-dashoffset="135" stroke-linecap="round"/>
+    </svg>
+
+    <div class="wf-time" id="wfTime">10:24</div>
+    <div class="wf-date" id="wfDate">Wed 11 Jun</div>
+    <div class="wf-lbl">bpm</div>
+    <div class="wf-bpm" id="dialNum">72</div>
+    <div class="wf-unit">resting</div>
+
+    <!-- invisible tap zones -->
+    <div class="tap-l" id="tapL"></div>
+    <div class="tap-r" id="tapR"></div>
+  </div>
+
+  <!-- two ghost buttons — invisible to anyone, only you know -->
+  <div class="btn-row">
+    <button class="log-btn" id="logBtn" onclick="showSector()">log</button>
+    <button class="reset-btn" id="resetBtn" onclick="resetDial()">rst</button>
+  </div>
+
+  <div class="wf-stats">
+    <div class="wf-stat">
+      <div class="wf-stat-val" id="fSteps">6,240</div>
+      <div class="wf-stat-lbl">steps</div>
+    </div>
+    <div class="wf-stat">
+      <div class="wf-stat-val" id="fCal">312</div>
+      <div class="wf-stat-lbl">kcal</div>
+    </div>
+    <div class="wf-stat">
+      <div class="wf-stat-val">7h 42m</div>
+      <div class="wf-stat-lbl">sleep</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── S2: 19 NUMBERS ── -->
+<div class="scr off" id="s2">
+  <div class="s2-inner">
+
+    <div class="s2-cam">
+      <div class="s2-cam-num" id="s2Cam">72</div>
+      <div class="s2-cam-lbl">bpm</div>
+    </div>
+
+    <div class="sep"></div>
+
+    <div class="num-grid" id="numGrid"></div>
+
+    <div class="sep2"></div>
+
+  </div>
+</div>
+
+<script>
+const WHEEL=[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+function getSector(c){
+  const i=WHEEL.indexOf(c);
+  return[...new Set(Array.from({length:19},(_,k)=>WHEEL[((i-9+k+37)%37)]))].sort((a,b)=>a-b);
+}
+
+/* Live clock */
+function setTime(){
+  const d=new Date();
+  const h=d.getHours(),m=d.getMinutes();
+  document.getElementById('wfTime').textContent=h+':'+(m<10?'0':'')+m;
+  const dy=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('wfDate').textContent=dy[d.getDay()]+' '+d.getDate()+' '+mo[d.getMonth()];
+}
+setTime();setInterval(setTime,30000);
+
+/* Fake stats drift */
+setInterval(()=>{
+  const s=parseInt(document.getElementById('fSteps').textContent.replace(/,/g,''));
+  document.getElementById('fSteps').textContent=(s+Math.floor(Math.random()*3)).toLocaleString();
+  const c=parseInt(document.getElementById('fCal').textContent);
+  if(Math.random()>0.6) document.getElementById('fCal').textContent=c+1;
+},9000);
+
+/* Dial — 0-36 mapped to BPM 60-96 */
+let cur=Math.floor(Math.random()*15)+8; // random start 8-22 → shows 68-82
+const dialEl=document.getElementById('dialNum');
+function disp(n){dialEl.textContent=60+n;}
+disp(cur);
+
+function change(d){cur=((cur+d)+37)%37;disp(cur);}
+
+/* Hold-to-scroll */
+let pt=null;
+function ps(d){change(d);pt=setInterval(()=>change(d),88);}
+function pe(){clearInterval(pt);}
+
+document.getElementById('tapL').addEventListener('touchstart',e=>{e.preventDefault();ps(-1);},{passive:false});
+document.getElementById('tapL').addEventListener('touchend',pe);
+document.getElementById('tapL').addEventListener('mousedown',()=>ps(-1));
+document.getElementById('tapL').addEventListener('mouseup',pe);
+document.getElementById('tapR').addEventListener('touchstart',e=>{e.preventDefault();ps(1);},{passive:false});
+document.getElementById('tapR').addEventListener('touchend',pe);
+document.getElementById('tapR').addEventListener('mousedown',()=>ps(1));
+document.getElementById('tapR').addEventListener('mouseup',pe);
+
+/* Reset dial to 0 */
+function resetDial(){
+  cur=0;disp(cur);
+}
+
+/* Show sector */
+function showSector(){
+  const sector=getSector(cur);
+  document.getElementById('s2Cam').textContent=60+cur;
+  const g=document.getElementById('numGrid');
+  g.innerHTML='';
+  sector.forEach((n,idx)=>{
+    const d=document.createElement('div');
+    const last=(idx===18);
+    d.className='nn'+(n===cur?' ctr':'')+(last?' lone':'');
+    d.textContent=n;
+    g.appendChild(d);
+  });
+  document.getElementById('s1').classList.add('off');
+  document.getElementById('s2').classList.remove('off');
+}
+
+/* Tap anywhere on s2 → reset dial to 0 and go back */
+document.getElementById('s2').addEventListener('click',()=>{
+  cur=0;disp(cur);
+  document.getElementById('s2').classList.add('off');
+  document.getElementById('s1').classList.remove('off');
+});
+
+/* Swipe right on s2 → same: reset + back */
+let sx=0;
+document.getElementById('s2').addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});
+document.getElementById('s2').addEventListener('touchend',e=>{
+  if(e.changedTouches[0].clientX-sx>40){
+    cur=0;disp(cur);
+    document.getElementById('s2').classList.add('off');
+    document.getElementById('s1').classList.remove('off');
+  }
+},{passive:true});
+
+/* Keyboard */
+document.addEventListener('keydown',e=>{
+  const onDial=!document.getElementById('s1').classList.contains('off');
+  if(onDial){
+    if(e.key==='ArrowLeft')change(-1);
+    if(e.key==='ArrowRight')change(1);
+    if(e.key==='Enter')showSector();
+    if(e.key==='r'||e.key==='R')resetDial();
+  } else {
+    if(e.key==='Backspace'||e.key==='Escape'){
+      cur=0;disp(cur);
+      document.getElementById('s2').classList.add('off');
+      document.getElementById('s1').classList.remove('off');
+    }
+  }
+});
+</script>
+</body>
+</html>
